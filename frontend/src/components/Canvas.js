@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { Suspense, useMemo, useState } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Canvas, useThree, useFrame, context } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import CameraControls from "camera-controls";
-
+import { CityContext, CityProvider, useCity } from "../state/CityContext";
+import { BridgeCityProvider } from "../state/BridgeContext";
 import { Earth } from "./Earth";
 
 CameraControls.install({ THREE });
@@ -20,7 +21,8 @@ const Controls = ({
   controls.dollySpeed = 0.1;
   return useFrame((state, delta) => {
     if (pointSelected) {
-      pos.set(focus.x + 0.2, focus.y + 0.2, focus.z + 0.2);
+      
+      pos.set(focus.x, focus.y, focus.z);
       //look.set(focus.x, focus.y, focus.z - 0.2);
 
       state.camera.position.lerp(pos, 0.5);
@@ -43,18 +45,26 @@ const Controls = ({
 export const CanvasContainer = () => {
   const [focus, setFocus] = useState(null);
   const [pointSelected, setPointSelected] = useState(false);
+  const city = useCity();
   return (
-    <Canvas camera={{ position: [0, 0, 15]}}>
-      <ambientLight />
-      <directionalLight position={[150, 150, 150]} intensity={0.55} />
-      <Suspense fallback={null}>
-        <Earth
-          setFocus={setFocus}
-          citySelected={pointSelected}
-          setCitySelected={setPointSelected}
-        />
-      </Suspense>
-      <Controls focus={focus} pointSelected={pointSelected} />
-    </Canvas>
+    <CityContext.Consumer>
+      {(value) => (
+        <Canvas camera={{ position: [0, 0, 15] }}>
+          <CityContext.Provider value={value}>
+            <ambientLight />
+            <directionalLight position={[150, 150, 150]} intensity={0.55} />
+            <Suspense fallback={null}>
+              <Earth
+                setFocus={setFocus}
+                citySelected={pointSelected}
+                setCitySelected={setPointSelected}
+                city={city}
+              />
+            </Suspense>
+            <Controls focus={focus} pointSelected={pointSelected} />
+          </CityContext.Provider>
+        </Canvas>
+      )}
+    </CityContext.Consumer>
   );
 };
